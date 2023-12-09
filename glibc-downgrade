@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# glibc-downgrade
+#
+
+set -e
+
+help() {
+	cat <<EOF
+Usage: ${0} VERSION FILE
+
+Example:
+    ${0} 2.33 /usr/lib/x86_64-linux-gnu/libhybris-common.so.1
+EOF
+}
+
+info() {
+	echo "I: ${@}"
+}
+
+error() {
+	echo "E: ${@}" >&2
+	exit 1
+}
+
+version_to_number() {
+	version="${1}"
+	count=${version//[^\.]}
+	if [ ${#count} -lt 2 ]; then
+		missing=$(( 2 - ${#count} ))
+		version="${version}$(printf '.0%.0s' {1..${missing}})"
+	fi
+	echo ${version//./}
+}
+
+if [ -z "${2}" ]; then
+	help
+	exit 1
+fi
+
+VERSION="${1}"
+FILE="${2}"
+target_version_number=$(version_to_number ${VERSION})
+
+[ -e "${FILE}" ] || error "${FILE}: No such file"
+
+patchelf_args=""
+for versioned_symbol in $(nm --dynamic --with-symbol-versions "${FILE}" | grep GLIBC_ | awk '{ print $2 }'); do
+	symbol=$(echo ${versioned_symbol} | cut -d@ -f1)
+	version=$(version_to_number ${versioned_symbol/${symbol}@GLIBC_/})
+
+	if [ ${version} -gt ${target_version_number} ]; then
+		# Higher version, clear
+		info "Stripping version from ${versioned_symbol}"
+		patchelf_args="${patchelf_args} --clear-symbol-version ${symbol}"
+	fi
+done
+
+exec patchelf ${patchelf_args} ${FILE}
