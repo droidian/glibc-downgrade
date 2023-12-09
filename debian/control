@@ -1,0 +1,18 @@
+Source: glibc-downgrade
+Maintainer: Eugenio Paolantonio (g7) <me@medesimo.eu>
+Section: misc
+Priority: optional
+Build-Depends: debhelper (>= 13)
+Standards-Version: 4.5.0.3
+Vcs-Browser: https://github.com/droidian/glibc-downgrade
+Vcs-Git: https://github.com/droidian/glibc-downgrade.git
+
+Package: glibc-downgrade
+Architecture: all
+Depends: ${misc:Depends},
+         bash,
+         binutils,
+         patchelf
+Description: Simple tool to clear symbol versions for newer glibc releases
+ glibc-downgrade is a rather simple tool to clear symbol versions
+ for newer glibc releases from a shared library or executable.  
